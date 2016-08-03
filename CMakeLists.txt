@@ -10,5 +10,6 @@ add_executable(PointerToMember main.cpp)
 
 add_custom_command(TARGET ${PROJECT_NAME}
 	POST_BUILD
-    COMMAND $(CMAKE_CXX_COMPILER)-g -O3 -std=c++11 -Wa,-aslh main.cpp >list.txt
+    COMMAND ${CMAKE_CXX_COMPILER} -g -O3 -std=c++11 -Wa,-aslh ${CMAKE_SOURCE_DIR}/main.cpp > list.txt
+	VERBATIM # optional
 )
