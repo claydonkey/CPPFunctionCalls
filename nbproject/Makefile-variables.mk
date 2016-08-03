@@ -22,6 +22,14 @@ CND_ARTIFACT_PATH_Release=dist/Release/MinGW-Windows/pointertomember
 CND_PACKAGE_DIR_Release=dist/Release/MinGW-Windows/package
 CND_PACKAGE_NAME_Release=pointertomember.tar
 CND_PACKAGE_PATH_Release=dist/Release/MinGW-Windows/package/pointertomember.tar
+# Android_Release configuration
+CND_PLATFORM_Android_Release=AndroidArm64_21-Windows
+CND_ARTIFACT_DIR_Android_Release=dist/Android_Release/AndroidArm64_21-Windows
+CND_ARTIFACT_NAME_Android_Release=pointertomember
+CND_ARTIFACT_PATH_Android_Release=dist/Android_Release/AndroidArm64_21-Windows/pointertomember
+CND_PACKAGE_DIR_Android_Release=dist/Android_Release/AndroidArm64_21-Windows/package
+CND_PACKAGE_NAME_Android_Release=pointertomember.tar
+CND_PACKAGE_PATH_Android_Release=dist/Android_Release/AndroidArm64_21-Windows/package/pointertomember.tar
 #
 # include compiler specific variables
 #

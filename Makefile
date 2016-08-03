@@ -48,7 +48,7 @@
 MKDIR=mkdir
 CP=cp
 CCADMIN=CCadmin
-
+INSTALL_DIR=data/local/tmp
 
 # build
 build: .build-post
@@ -59,6 +59,16 @@ build: .build-post
 .build-post: .build-impl
 # Add your post 'build' code here...
 	$(COMPILE.c)  -g -O3 -std=c++11 -Wa,-aslh main.cpp >list.txt
+	@echo $(CONF)
+ifeq ($(CONF), Android_Release)
+	-adb push ${CND_ARTIFACT_PATH_Android_Release}   $(INSTALL_DIR)
+	-adb shell chmod 777 $(INSTALL_DIR)/${CND_ARTIFACT_NAME_Android_Release}
+endif
+
+
+# build
+build: .build-post
+
 
 # clean
 clean: .clean-post

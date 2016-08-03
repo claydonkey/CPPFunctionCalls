@@ -9,24 +9,20 @@ using namespace std;
 #if defined DEBUG
 
 #define showAnswer(function)   \
-cout << "Answer: " << std::to_string(function) << endl
-
+printf ("Answer: %i\n" , function);
 #define showInfo(function) \
-  std::cout << function << endl
-
+std::cout <<  function << endl
 #else
 #define showAnswer(function)  \
- cout << "Answer: " << std::to_string(function) << endl
-
-#define showInfo(function)
+printf ("Answer: %i\n" , function);
+#define showInfo(function) 1
 #endif
 
 #if defined ONLYPASS
 #define sFRes(function)
-
 #elif defined DEBUG
 #define sFRes(function) \
- cout << "Result: " << std::to_string(function) << endl
+printf ("Result: %i\n" , function);
 #else
 #define sFRes(function) function
 #endif
@@ -48,7 +44,7 @@ class SimpleClass {
 public:
 
     int memberFunction(twoNumbers_t & nos, void * context) {
-	(context == nullptr ? std::cout << "member function1 with null context: " << endl : std::cout << "member function1 HAS context: " << endl);
+	context == nullptr ? showInfo("member function1 with null context: ") : showInfo("member function1 HAS context: ");
 	return nos.first + nos.second;
     }
 
@@ -87,12 +83,12 @@ typedef int ( SimpleClass::*MemFuncPtr_t)(twoNumbers_t & nos);
 typedef int ( SimpleClass::*MemFuncMovePtr_t)(twoNumbers_t && nos);
 
 int funcToMemFunction(twoNumbers_t & nos, void* context) {
-    (context == nullptr ? std::cout << "member funcToMemFunction with null context: " << endl : std::cout << "member funcToMemFunction HAS context: " << endl);
+    context == nullptr ? showInfo("funcToMemFunction with null context: ") : showInfo("funcToMemFunction HAS context: ");
     return static_cast<SimpleClass*> (context)->memberFunction(nos, context);
 }
 
 int funcToMemFunction(twoNumbers_t && nos, void* context) {
-    (context == nullptr ? std::cout << "member funcToMemFunction with null context: " << endl : std::cout << "member funcToMemFunction HAS context: " << endl);
+    context == nullptr ? showInfo("funcToMemFunction with null context: ") : showInfo("funcToMemFunction HAS context: ");
     return static_cast<SimpleClass*> (context)->memberFunction(std::move(nos));
 }
 
@@ -101,7 +97,7 @@ static int forwardingFunction(FuncMovePtr_t pfunc, twoNumbers_t && nos) {
 }
 
 static int forwardingFunction(cFuncMovePtr_t pfunc, twoNumbers_t && nos, void* context = nullptr) {
-    (context == nullptr ? std::cout << "member forwardingFunction with null context: " << endl : std::cout << "member forwardingFunction HAS context: " << endl);
+    context == nullptr ? showInfo("forwardingFunction with null context: ") : showInfo("forwardingFunction HAS context: ");
     showAnswer(pfunc(std::move(nos), context));
 }
 
@@ -110,7 +106,7 @@ static int simpleFunction(FuncPtr_t pfunc, twoNumbers_t & nos) {
 }
 
 static int simpleFunction(cFuncPtr_t pfunc, twoNumbers_t & nos, void* context = nullptr) {
-    (context == nullptr ? std::cout << "member simpleFunction with null context: " << endl : std::cout << "member simpleFunction HAS context: " << endl);
+    context == nullptr ? showInfo("simpleFunction with null context: ") : showInfo("member simpleFunction HAS context: ");
     showAnswer(pfunc(nos, context));
 }
 
