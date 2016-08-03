@@ -31,22 +31,22 @@ typedef TwoNumbers twoNumbers_t;
 class SimpleClass {
 public:
 
-    int memFunction(twoNumbers_t & nos) {
+    int memberFunction(twoNumbers_t & nos) {
 	showInfo("member function with no  context: ");
 	return nos.first + nos.second;
     }
 
-    int memFunction(void *, twoNumbers_t & nos) {
+    int memberFunction(void *, twoNumbers_t & nos) {
 	showInfo("member function with null context: ");
 	return nos.first + nos.second;
     }
 
-    int memFunction1(void *, twoNumbers_t & nos) {
+    int memberFunction1(void *, twoNumbers_t & nos) {
 	showInfo("member function with null context: ");
 	return nos.first + nos.second;
     }
 
-    int memFunction(void *, twoNumbers_t && nos) {
+    int memberFunction(void *, twoNumbers_t && nos) {
 	twoNumbers_t nosm = std::move(nos);
 	showInfo("member move function with null  context");
 	return nosm.first + nosm.second;
@@ -74,11 +74,11 @@ int funcToNowhere(void*, twoNumbers_t & nos) {
 }
 
 int funcToMemFunction(void* context, twoNumbers_t & nos) {
-    return static_cast<SimpleClass*> (context)->memFunction(nos);
+    return static_cast<SimpleClass*> (context)->memberFunction(nos);
 }
 
 int funcToMemFunction(void* context, twoNumbers_t && nos) {
-    return static_cast<SimpleClass*> (context)->memFunction(context, std::move(nos));
+    return static_cast<SimpleClass*> (context)->memberFunction(context, std::move(nos));
 }
 
 typedef int (*FuncPtr_t)(void*, twoNumbers_t & nos); //Function taking 2 integer arguments and returning integer;
@@ -111,7 +111,7 @@ int main() {
 
     // <Functional>
     using namespace std::placeholders;
-    std::function<int( void *, twoNumbers_t&) > f_simpleFunc = std::bind(&SimpleClass::memFunction1, obj, _1, _2);
+    std::function<int( void *, twoNumbers_t&) > f_simpleFunc = std::bind(&SimpleClass::memberFunction1, obj, _1, _2);
     showResult(f_simpleFunc(nullptr, nos));
     showInfo(f_simpleFunc.target_type().name());
     auto ptr_fun = f_simpleFunc.target<int (void*, twoNumbers_t &) >();
@@ -119,15 +119,15 @@ int main() {
     //   simpleFunction(*ptr_fun, nullptr, nos);
 
     //Expected
-    MemFuncPtr_t MemFunction = &SimpleClass::memFunction;
+    MemFuncPtr_t MemFunction = &SimpleClass::memberFunction;
     showResult((obj.*MemFunction) (nullptr, nos));
     // simpleFunction(obj.*MemFunction, nullptr, nos);
 
     //Lambda
-    simpleFunction((FuncPtr_t)[ = ](void*, twoNumbers_t & n){
+    simpleFunction((FuncPtr_t) ([](void* obj, twoNumbers_t & n) {
 	showInfo("Lambda: ");
-	return n.first + n.second;
-    }, 0, nos);
+	return static_cast<SimpleClass*>(obj)->memberFunction(nullptr, n);
+    }), 0, nos);
 
     //Trampoline
     forwardingFunction(&funcToNowhere, 0, twoNumbers_t(12, 34));
@@ -139,15 +139,15 @@ int main() {
     forwardingFunction(StaticMemMoveFunction, nullptr, twoNumbers_t(12, 34));
 
     //Expected
-    MemFuncMovePtr_t MemMoveFunction = &SimpleClass::memFunction;
+    MemFuncMovePtr_t MemMoveFunction = &SimpleClass::memberFunction;
     showAnswer((obj.*MemMoveFunction) (nullptr, twoNumbers_t(12, 34)));
-  // forwardingFunction(obj.*MemFunction, nullptr, twoNumbers_t(12, 34));
+    // forwardingFunction(obj.*MemFunction, nullptr, twoNumbers_t(12, 34));
 
 
     //Lambda
-    forwardingFunction((FuncMovePtr_t)[](void*, twoNumbers_t && nos) {
+    forwardingFunction((FuncMovePtr_t)[](void* obj, twoNumbers_t && n) {
 	showInfo("Lambda forward: ");
-	return nos.first + nos.second;
+	return static_cast<SimpleClass*>(obj)->memberFunction(nullptr, n);
     }, 0, twoNumbers_t(12, 34));
 
 
