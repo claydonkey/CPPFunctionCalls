@@ -37,6 +37,10 @@
       <compileType>
         <ccTool>
           <standard>8</standard>
+          <commandLine>-O3 -S</commandLine>
+          <preprocessorList>
+            <Elem>DEBUG</Elem>
+          </preprocessorList>
         </ccTool>
       </compileType>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">

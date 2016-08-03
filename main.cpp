@@ -2,9 +2,7 @@
 #include <iostream>
 #include <functional>
 
-#define DEBUG 0
-
-#if (DEBUG)
+#if defined DEBUG
 #define showAnswer showResult
 #define showResult(function) \
   cout << "Result: " << std::to_string(function) << endl
