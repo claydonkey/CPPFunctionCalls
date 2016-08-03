@@ -4,7 +4,7 @@
 
 
 using namespace std;
-//#define ONLYPASS
+#define nONLYPASS
 
 #if defined DEBUG
 
@@ -41,36 +41,52 @@ typedef pair<int, int> twoNumbers_t;
 
 class SimpleClass {
     int temp = 0;
+
+private:
+
+    int virtual function(twoNumbers_t n) {
+	return n.first + n.second * temp++;
+    }
+
+    int static sfunction(twoNumbers_t n, void * context) {
+	return n.first + n.second * static_cast<SimpleClass*> (context)->temp++;
+    }
 public:
 
     int memberFunction(twoNumbers_t & nos, void * context) {
 	context == nullptr ? showInfo("member function1 with null context: ") : showInfo("member function1 HAS context: ");
-	return nos.first + nos.second;
+	return function(nos);
     }
 
     int memberFunction(twoNumbers_t & nos) {
-	temp += 1;
-	return nos.first * nos.second;
+	return function(nos);
     }
 
-    int memberFunction1(twoNumbers_t & nos) { //annoying for std:function
+    // int memberFunction1(twoNumbers_t & nos) {
+    ///*annoying for std:function*/ return function(nos);
+    // }
 
-	return nos.first - nos.second;
+    int memberFunctionFunc1(twoNumbers_t & nos) {
+	/*annoying for std:function*/ return function(nos);
     }
 
-    int memberFunction(twoNumbers_t && nos) {
-
-	twoNumbers_t nosm = std::move(nos);
-	return nosm.first + nosm.second;
+    int memberFunction(twoNumbers_t && ns) {
+	twoNumbers_t nos = std::move(ns);
+	return function(nos);
     }
 
-    static int staticFunction(twoNumbers_t & nos) {
-	return nos.first + nos.second;
+    int memberFunctionFunc2(twoNumbers_t && ns) {
+	twoNumbers_t nos = std::move(ns);
+	return function(nos);
     }
 
-    static int staticFunction(twoNumbers_t && nos) {
-	twoNumbers_t nosm = std::move(nos);
-	return nosm.first + nosm.second;
+    static int staticFunction(twoNumbers_t & nos, void * context) {
+	return sfunction(nos, context);
+    }
+
+    static int staticFunction(twoNumbers_t && ns, void * context) {
+	twoNumbers_t nos = std::move(ns);
+	return sfunction(nos, context);
     }
 };
 
@@ -112,25 +128,26 @@ static int simpleFunction(cFuncPtr_t pfunc, twoNumbers_t & nos, void* context = 
 
 int main() {
 
-
-    twoNumbers_t nos(12, 34);
+    twoNumbers_t nos(5, 10);
     SimpleClass obj;
 
     //Trampoline
-    simpleFunction(&funcToMemFunction, nos);
+    simpleFunction(&funcToMemFunction, nos, &obj);
 
     //Static
-    FuncPtr_t StaticMemFunction = &SimpleClass::staticFunction;
-    sFRes(StaticMemFunction(nos));
-    simpleFunction(StaticMemFunction, nos);
+    cFuncPtr_t StaticMemFunction = &SimpleClass::staticFunction;
+    sFRes(StaticMemFunction(nos, &obj));
+    simpleFunction(StaticMemFunction, nos, &obj);
 
     // <Functional>
     using namespace std::placeholders;
-    std::function<int( twoNumbers_t&, void *) > f_simpleFunc = std::bind(&SimpleClass::memberFunction1, obj, _1);
-    sFRes(f_simpleFunc(nos, nullptr));
-    auto ptr_fun = f_simpleFunc.target<int ( twoNumbers_t &, void*) >();
+    std::function<int( twoNumbers_t&) > f_simpleFunc = std::bind(&SimpleClass::memberFunctionFunc1, &obj, _1);
+    auto p = f_simpleFunc.target < decltype(std::bind(&SimpleClass::memberFunctionFunc1, &obj, _1))>();
+    sFRes(f_simpleFunc(nos));
+    // (f_simpleFunc.target<int ( twoNumbers_t & ) >())(nos);
+    // auto ptr_fun = f_simpleFunc.target<int ( twoNumbers_t &) >();
 
-    //   simpleFunction(*ptr_fun, nullptr, nos);
+    simpleFunction((FuncPtr_t )&p, nos);
 
     //Expected
     MemFuncPtr_t MemFunction = &SimpleClass::memberFunction;
@@ -143,23 +160,31 @@ int main() {
     }), nos, &obj);
 
     //Trampoline
-    forwardingFunction(&funcToMemFunction, twoNumbers_t(12, 34));
+    forwardingFunction(&funcToMemFunction, twoNumbers_t(5, 10), &obj);
 
     //Static
-    FuncMovePtr_t StaticMemMoveFunction = &SimpleClass::staticFunction;
-    sFRes(StaticMemMoveFunction(twoNumbers_t(12, 34)));
-    forwardingFunction(StaticMemMoveFunction, twoNumbers_t(12, 34));
+    cFuncMovePtr_t StaticMemMoveFunction = &SimpleClass::staticFunction;
+    sFRes(StaticMemMoveFunction(twoNumbers_t(5, 10), &obj));
+    forwardingFunction(StaticMemMoveFunction, twoNumbers_t(5, 10), &obj);
+
+    // <Functional>
+    using namespace std::placeholders;
+    std::function<int( twoNumbers_t&&) > f_forwardingFunc = std::bind(&SimpleClass::memberFunctionFunc2, &obj, _1);
+
+    sFRes(f_forwardingFunc(twoNumbers_t(5, 10)));
+    auto ptr_fun2 = f_forwardingFunc.target<int ( twoNumbers_t &&) >();
+
 
     //Expected
     MemFuncMovePtr_t MemMoveFunction = &SimpleClass::memberFunction;
-    sFRes((obj.*MemMoveFunction) (twoNumbers_t(12, 34)));
+    sFRes((obj.*MemMoveFunction) (twoNumbers_t(5, 10)));
     // forwardingFunction(obj.*MemFunction, nullptr, twoNumbers_t(12, 34));
 
 
     //Lambda
     forwardingFunction([](twoNumbers_t && n, void* context) {
 	return static_cast<SimpleClass*> (context)->memberFunction(n);
-    }, twoNumbers_t(12, 34), &obj);
+    }, twoNumbers_t(5, 10), &obj);
 
 
     return 0;
