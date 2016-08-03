@@ -1,20 +1,18 @@
 #include <cstdlib>
 #include <iostream>
 #include <functional>
-
+using namespace std;
 #if defined DEBUG
 #define showAnswer showResult
-#define showResult(function) \
-  cout << "Result: " << std::to_string(function) << endl
-#define showInfo(function)  \
- cout  << function << endl
+#define showResult(function)   cout << "Result: " << std::to_string(function) << endl
+#define showInfo( function)   std::cout << function << endl
+
 #else
 #define showAnswer(function)  \
  cout << "Result: " << std::to_string(function) << endl
 #define showResult(function) function
 #define showInfo(function)
 #endif
-using namespace std;
 
 class TwoNumbers {
 public:
@@ -25,38 +23,40 @@ public:
     int second;
 };
 
-//typedef pair<int, int> twoNumbers_t;
-typedef TwoNumbers twoNumbers_t;
+typedef pair<int, int> twoNumbers_t;
+//typedef TwoNumbers twoNumbers_t;
 
 class SimpleClass {
 public:
 
     int memberFunction(twoNumbers_t & nos) {
 	showInfo("member function with no  context: ");
+	return nos.first * nos.second;
+    }
+
+    int memberFunction(void * context, twoNumbers_t & nos) {
+	(context == nullptr ? std::cout << "member function1 with null context: " << endl : std::cout << "member function1 HAS context: " << endl);
 	return nos.first + nos.second;
     }
 
-    int memberFunction(void *, twoNumbers_t & nos) {
-	showInfo("member function with null context: ");
+    int memberFunction1(void * context, twoNumbers_t & nos) { //annoying for std:function
+	(context == nullptr ? std::cout << "member function2 with null context: " << endl : std::cout << "member function2 HAS context: " << endl);
 	return nos.first + nos.second;
     }
 
-    int memberFunction1(void *, twoNumbers_t & nos) {
-	showInfo("member function with null context: ");
-	return nos.first + nos.second;
-    }
-
-    int memberFunction(void *, twoNumbers_t && nos) {
+    int memberFunction(void *context, twoNumbers_t && nos) {
+	(context == nullptr ? std::cout << "member function3 with null context: " << endl : std::cout << "member function3 HAS context: " << endl);
 	twoNumbers_t nosm = std::move(nos);
-	showInfo("member move function with null  context");
 	return nosm.first + nosm.second;
     }
 
-    static int staticFunction(void *, twoNumbers_t & nos) {
+    static int staticFunction(void * context, twoNumbers_t & nos) {
+	(context == nullptr ? std::cout << "member function4 with null context: " << endl : std::cout << "member function4 HAS context: " << endl);
 	return nos.first + nos.second;
     }
 
-    static int staticFunction(void *, twoNumbers_t && nos) {
+    static int staticFunction(void * context, twoNumbers_t && nos) {
+	(context == nullptr ? std::cout << "member function5 with null context: " << endl : std::cout << "member function5 HAS context: " << endl);
 	twoNumbers_t nosm = std::move(nos);
 	return nosm.first + nosm.second;
     }
@@ -74,20 +74,24 @@ int funcToNowhere(void*, twoNumbers_t & nos) {
 }
 
 int funcToMemFunction(void* context, twoNumbers_t & nos) {
-    return static_cast<SimpleClass*> (context)->memberFunction(nos);
+    return static_cast<SimpleClass*> (context)->memberFunction(context, nos);
 }
 
 int funcToMemFunction(void* context, twoNumbers_t && nos) {
     return static_cast<SimpleClass*> (context)->memberFunction(context, std::move(nos));
 }
 
-typedef int (*FuncPtr_t)(void*, twoNumbers_t & nos); //Function taking 2 integer arguments and returning integer;
-typedef int (*FuncMovePtr_t)(void*, twoNumbers_t && nos); //Function taking 2 integer arguments and returning integer;
-typedef int ( SimpleClass::*MemFuncPtr_t)(void*, twoNumbers_t & nos);
-typedef int ( SimpleClass::*MemFuncMovePtr_t)(void*, twoNumbers_t && nos);
+typedef int (*FuncPtr_t)(void* context, twoNumbers_t & nos); //Function taking 2 integer arguments and returning integer;
+typedef int (*FuncMovePtr_t)(void* context, twoNumbers_t && nos); //Function taking 2 integer arguments and returning integer;
+typedef int ( SimpleClass::*MemFuncPtr_t)(void* context, twoNumbers_t & nos);
+typedef int ( SimpleClass::*MemFuncMovePtr_t)(void* context, twoNumbers_t && nos);
 
 static int forwardingFunction(FuncMovePtr_t pfunc, void* context, twoNumbers_t && nos) {
     showResult(pfunc(context, std::move(nos)));
+}
+
+static int simpleFunction(FuncPtr_t pfunc, twoNumbers_t & nos) {
+    showResult(pfunc(nullptr, nos));
 }
 
 static int simpleFunction(FuncPtr_t pfunc, void* context, twoNumbers_t & nos) {
@@ -96,17 +100,17 @@ static int simpleFunction(FuncPtr_t pfunc, void* context, twoNumbers_t & nos) {
 
 int main() {
 
-    SimpleClass obj;
-    twoNumbers_t nos(12, 34);
 
+    twoNumbers_t nos(12, 34);
+    SimpleClass obj;
     //Trampoline
-    simpleFunction(&funcToNowhere, 0, nos);
+    simpleFunction(&funcToNowhere, nos);
     simpleFunction(&funcToMemFunction, &obj, nos);
 
     //Static
     FuncPtr_t StaticMemFunction = &SimpleClass::staticFunction;
     showResult(StaticMemFunction(nullptr, nos));
-    simpleFunction(StaticMemFunction, nullptr, nos);
+    simpleFunction(StaticMemFunction, nos);
 
 
     // <Functional>
@@ -124,9 +128,9 @@ int main() {
     // simpleFunction(obj.*MemFunction, nullptr, nos);
 
     //Lambda
-    simpleFunction((FuncPtr_t) ([](void* obj, twoNumbers_t & n) {
+    simpleFunction(([](void* context, twoNumbers_t & n) {
 	showInfo("Lambda: ");
-	return static_cast<SimpleClass*>(obj)->memberFunction(nullptr, n);
+	return (static_cast<SimpleClass*> (context))->memberFunction(nullptr, n);
     }), 0, nos);
 
     //Trampoline
@@ -145,9 +149,9 @@ int main() {
 
 
     //Lambda
-    forwardingFunction((FuncMovePtr_t)[](void* obj, twoNumbers_t && n) {
+    forwardingFunction([](void* context, twoNumbers_t && n) {
 	showInfo("Lambda forward: ");
-	return static_cast<SimpleClass*>(obj)->memberFunction(nullptr, n);
+	return static_cast<SimpleClass*> (context)->memberFunction(nullptr, n);
     }, 0, twoNumbers_t(12, 34));
 
 
